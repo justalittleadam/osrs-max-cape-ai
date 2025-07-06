@@ -1,36 +1,132 @@
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from stable_baselines3 import PPO
 from environments import MiningEnvironment
 
+
 def main():
     # Create environment
-    print("Creating mining environment...")
+    print("Creating enhanced mining environment...")
     env = MiningEnvironment()
 
-    # Create PPO model
-    print("Creating PPO model...")
-    model = PPO("MlpPolicy", env, verbose=1)
+    print("\n=== Testing Enhanced Navigation ===")
 
-    # Train for a short test
-    print("Starting training...")
-    model.learn(total_timesteps=1000)
+    # Test the enhanced environment first
+    obs, info = env.reset()
+    print(f"Starting area observation index [26]: {obs[26]}")  # Should show castle area
+    print(f"Starting position: ({obs[0]:.0f}, {obs[1]:.0f})")  # Should be castle coords
+    print(f"Distance to rocks: {obs[19]:.1f}")  # Should be far (50.0)
+    print(f"Rocks in area: {obs[22]:.0f}")  # Should be 0 at castle
+
+    # Test navigation to mine (action 1)
+    print("\n1. Testing navigation to mine...")
+    obs, reward, done, truncated, info = env.step(1)  # navigate_to_mine
+    print(f"Action: navigate_to_mine")
+    print(f"Reward: {reward:.3f}")
+    print(f"Message: {info.get('server_response', {}).get('message', 'No message')}")
+    print(f"New position: ({obs[0]:.0f}, {obs[1]:.0f})")
+
+    # Continue navigating until we reach the mine
+    navigation_steps = 0
+    while obs[26] != 1.0 and navigation_steps < 15:  # 1.0 should represent lumbridge_mine
+        obs, reward, done, truncated, info = env.step(1)  # Keep navigating
+        navigation_steps += 1
+        message = info.get('server_response', {}).get('message', '')
+        if 'Arrived' in message:
+            print(f"✅ {message}")
+            break
+        elif navigation_steps % 3 == 0:  # Print every 3rd step
+            print(f"  Still walking... {message}")
+
+    # Test mining once we're at the mine
+    print("\n2. Testing mining...")
+    obs, reward, done, truncated, info = env.step(8)  # mine_nearest
+    print(f"Action: mine_nearest")
+    print(f"Reward: {reward:.3f}")
+    print(f"Message: {info.get('server_response', {}).get('message', 'No message')}")
+    print(f"Inventory count: {obs[9]:.0f}")
+
+    # Test navigation to bank (action 2)
+    print("\n3. Testing navigation to bank...")
+    obs, reward, done, truncated, info = env.step(2)  # navigate_to_bank
+    print(f"Action: navigate_to_bank")
+    print(f"Reward: {reward:.3f}")
+    print(f"Message: {info.get('server_response', {}).get('message', 'No message')}")
+
+    print("\n=== Enhanced Navigation Tests Complete! ===\n")
+
+    # Create PPO model with enhanced settings for navigation
+    print("Creating enhanced PPO model...")
+    model = PPO(
+        "MlpPolicy",
+        env,
+        verbose=1,
+        learning_rate=3e-4,
+        n_steps=2048,  # More steps for complex navigation
+        batch_size=64,
+        n_epochs=10,
+        gamma=0.99,  # Important for multi-step rewards
+        gae_lambda=0.95,
+        clip_range=0.2,
+        ent_coef=0.01,  # Encourage exploration
+    )
+
+    # Train for longer since navigation is more complex
+    print("Starting enhanced training...")
+    print("Agent must learn: Castle → Mine → Mining → Bank → Repeat")
+    model.learn(total_timesteps=10000)  # Increased from 1000
 
     print("Training complete! Testing trained model...")
 
-    # Test the trained model
+    # Test the trained model with detailed logging
     obs, info = env.reset()
-    for i in range(10):
+    total_reward = 0
+    step_count = 0
+
+    print(f"\n=== Testing Trained Agent ===")
+    print(f"Starting position: ({obs[0]:.0f}, {obs[1]:.0f})")
+
+    for i in range(50):  # More steps to see full cycle
         action, _ = model.predict(obs)
         obs, reward, done, truncated, info = env.step(action)
-        env.render()
+        total_reward += reward
+        step_count += 1
+
+        # Get action name for display
+        action_names = {
+            0: "no_move", 1: "navigate_to_mine", 2: "navigate_to_bank",
+            3: "move_to_tin", 4: "move_to_copper", 5: "move_to_iron", 6: "move_to_coal",
+            7: "no_mine", 8: "mine_nearest", 9: "mine_tin", 10: "mine_copper", 11: "mine_iron", 12: "mine_coal",
+            13: "no_inventory", 14: "drop_ore", 15: "bank_all", 16: "bank_ore_only",
+            17: "wait_tick", 18: "wait_mining", 19: "wait_movement"
+        }
+        action_name = action_names.get(action, f"action_{action}")
+
+        # Print interesting events
+        message = info.get('server_response', {}).get('message', '')
+        if any(keyword in message for keyword in ['Arrived', 'mined', 'Banked', 'Walking']):
+            print(f"Step {step_count}: {action_name} → {message} (Reward: {reward:.2f})")
+
+        # Render every 10 steps
+        if i % 10 == 0:
+            env.render()
+
         if done or truncated:
+            print(f"Episode ended: {info.get('reason', 'Unknown reason')}")
             obs, info = env.reset()
+            break
+
+    print(f"\nFinal Results:")
+    print(f"Total steps: {step_count}")
+    print(f"Total reward: {total_reward:.2f}")
+    print(f"Average reward per step: {total_reward / step_count:.3f}")
 
     env.close()
-    print("✅ Training and testing complete!")
+    print("✅ Enhanced training and testing complete!")
+
 
 if __name__ == "__main__":
     main()

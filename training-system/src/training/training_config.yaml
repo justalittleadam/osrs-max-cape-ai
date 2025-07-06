@@ -1,0 +1,62 @@
+
+# training_config.yaml
+# Configuration file for mining agent training
+
+experiment:
+  name: "mining_agent_baseline"
+  description: "Baseline PPO agent for OSRS mining skill"
+  version: "1.0.0"
+
+environment:
+  name: "MiningEnvironment"
+  server_host: "localhost"
+  server_port: 8080
+  max_steps: 10000
+  max_duration_minutes: 60
+  num_parallel_envs: 4
+
+training:
+  algorithm: "PPO"
+  total_timesteps: 1000000
+  save_frequency: 50000
+  eval_frequency: 25000
+
+  # PPO Hyperparameters
+  ppo:
+    learning_rate: 3e-4
+    n_steps: 2048
+    batch_size: 64
+    n_epochs: 10
+    gamma: 0.99
+    gae_lambda: 0.95
+    clip_range: 0.2
+    ent_coef: 0.01
+    vf_coef: 0.5
+    max_grad_norm: 0.5
+
+network:
+  architecture: [256, 256, 128]
+  activation: "ReLU"
+  dropout: 0.1
+  orthogonal_init: true
+
+rewards:
+  xp_gained_multiplier: 1.0
+  level_up_bonus: 100.0
+  efficiency_bonus_threshold: 10000
+  inventory_full_bonus: 0.5
+  idle_penalty_threshold: 50
+  failed_action_penalty: 0.1
+
+logging:
+  tensorboard: true
+  wandb: true
+  wandb_project: "osrs-mining-rl"
+  log_level: "INFO"
+  save_videos: false
+
+paths:
+  models: "./models"
+  logs: "./logs"
+  tensorboard_logs: "./tensorboard_logs"
+  checkpoints: "./checkpoints"

@@ -108,16 +108,16 @@ class MiningEnvironment(gym.Env):
         """Convert discrete action to API request."""
         action_map = {
             0: {"type": "movement", "action": "no_move"},
-            1: {"type": "movement", "action": "move_to_rock", "params": {"rock_type": "tin"}},
-            2: {"type": "movement", "action": "move_to_rock", "params": {"rock_type": "copper"}},
+            1: {"type": "movement", "action": "navigate_to_mine"},  # FIXED
+            2: {"type": "movement", "action": "navigate_to_bank"},  # FIXED
             3: {"type": "movement", "action": "move_to_rock", "params": {"rock_type": "iron"}},
             4: {"type": "movement", "action": "move_to_rock", "params": {"rock_type": "coal"}},
-            5: {"type": "movement", "action": "move_to_bank"},
+            5: {"type": "movement", "action": "move_to_bank"},  # Keep this as backup
             6: {"type": "mining", "action": "no_mine"},
             7: {"type": "mining", "action": "mine_nearest"},
-            8: {"type": "mining", "action": "mine_rock", "params": {"rock_type": "tin"}},
-            9: {"type": "mining", "action": "mine_rock", "params": {"rock_type": "copper"}},
-            10: {"type": "mining", "action": "mine_rock", "params": {"rock_type": "iron"}},
+            8: {"type": "mining", "action": "mine_rock", "params": {"rock_type": "iron"}},  # CHANGED from tin
+            9: {"type": "mining", "action": "mine_rock", "params": {"rock_type": "tin"}},
+            10: {"type": "mining", "action": "mine_rock", "params": {"rock_type": "copper"}},
             11: {"type": "mining", "action": "mine_rock", "params": {"rock_type": "coal"}},
             12: {"type": "inventory", "action": "no_inventory_action"},
             13: {"type": "inventory", "action": "drop_all_ore"},
