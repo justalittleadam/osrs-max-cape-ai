@@ -1,0 +1,395 @@
+{
+  "environment_name": "MiningEnv",
+  "description": "Mining skill training environment for OSRS",
+  "version": "1.0.0",
+  "actions": [
+    {
+      "id": "movement",
+      "description": "Player movement actions",
+      "actions": [
+        {
+          "id": "no_move",
+          "description": "Stay in current position"
+        },
+        {
+          "id": "move_to_rock",
+          "description": "Move to nearest mineable rock",
+          "parameters": {
+            "rock_type": ["tin", "copper", "iron", "coal", "mithril", "adamant", "runite"]
+          }
+        },
+        {
+          "id": "move_to_bank",
+          "description": "Move to nearest bank"
+        },
+        {
+          "id": "move_to_position",
+          "description": "Move to specific coordinates",
+          "parameters": {
+            "x": "int",
+            "y": "int"
+          }
+        }
+      ]
+    },
+    {
+      "id": "mining",
+      "description": "Mining-related actions",
+      "actions": [
+        {
+          "id": "no_mine",
+          "description": "Don't mine anything"
+        },
+        {
+          "id": "mine_rock",
+          "description": "Mine a specific rock",
+          "parameters": {
+            "rock_id": "int",
+            "rock_type": ["tin", "copper", "iron", "coal", "mithril", "adamant", "runite"]
+          },
+          "dependencies": {
+            "require_all": [
+              "have_pickaxe",
+              "rock_in_range"
+            ]
+          }
+        },
+        {
+          "id": "mine_nearest",
+          "description": "Mine the nearest available rock"
+        }
+      ]
+    },
+    {
+      "id": "inventory",
+      "description": "Inventory management actions",
+      "actions": [
+        {
+          "id": "no_inventory_action",
+          "description": "No inventory action"
+        },
+        {
+          "id": "drop_item",
+          "description": "Drop an item from inventory",
+          "parameters": {
+            "slot": "int (0-27)",
+            "item_id": "int"
+          }
+        },
+        {
+          "id": "drop_all_ore",
+          "description": "Drop all ore from inventory"
+        },
+        {
+          "id": "bank_all",
+          "description": "Bank all items",
+          "dependencies": {
+            "require_all": [
+              "at_bank"
+            ]
+          }
+        },
+        {
+          "id": "bank_ore_only",
+          "description": "Bank only ore items",
+          "dependencies": {
+            "require_all": [
+              "at_bank"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "wait",
+      "description": "Waiting actions",
+      "actions": [
+        {
+          "id": "wait_tick",
+          "description": "Wait one game tick"
+        },
+        {
+          "id": "wait_mining",
+          "description": "Wait for current mining action to complete"
+        },
+        {
+          "id": "wait_movement",
+          "description": "Wait for movement to complete"
+        }
+      ]
+    }
+  ],
+  "observations": [
+    {
+      "id": "player_state",
+      "description": "Current player information",
+      "observations": [
+        {
+          "id": "position_x",
+          "description": "Player X coordinate",
+          "type": "int",
+          "range": [0, 6400]
+        },
+        {
+          "id": "position_y",
+          "description": "Player Y coordinate",
+          "type": "int",
+          "range": [0, 6400]
+        },
+        {
+          "id": "hitpoints",
+          "description": "Current hitpoints",
+          "type": "int",
+          "range": [1, 99]
+        },
+        {
+          "id": "mining_level",
+          "description": "Current mining level",
+          "type": "int",
+          "range": [1, 99]
+        },
+        {
+          "id": "mining_xp",
+          "description": "Current mining experience",
+          "type": "int",
+          "range": [0, 200000000]
+        },
+        {
+          "id": "total_xp_gained",
+          "description": "XP gained this session",
+          "type": "int",
+          "range": [0, 1000000]
+        },
+        {
+          "id": "is_moving",
+          "description": "Is player currently moving",
+          "type": "bool"
+        },
+        {
+          "id": "is_mining",
+          "description": "Is player currently mining",
+          "type": "bool"
+        },
+        {
+          "id": "animation_id",
+          "description": "Current player animation",
+          "type": "int",
+          "range": [0, 10000]
+        }
+      ]
+    },
+    {
+      "id": "inventory_state",
+      "description": "Inventory information",
+      "observations": [
+        {
+          "id": "inventory_count",
+          "description": "Number of items in inventory",
+          "type": "int",
+          "range": [0, 28]
+        },
+        {
+          "id": "inventory_free_slots",
+          "description": "Number of free inventory slots",
+          "type": "int",
+          "range": [0, 28]
+        },
+        {
+          "id": "has_pickaxe",
+          "description": "Has a pickaxe equipped or in inventory",
+          "type": "bool"
+        },
+        {
+          "id": "pickaxe_type",
+          "description": "Type of pickaxe available",
+          "type": "categorical",
+          "categories": ["none", "bronze", "iron", "steel", "mithril", "adamant", "rune", "dragon"]
+        },
+        {
+          "id": "ore_count_total",
+          "description": "Total ore count in inventory",
+          "type": "int",
+          "range": [0, 28]
+        },
+        {
+          "id": "tin_ore_count",
+          "description": "Tin ore count",
+          "type": "int",
+          "range": [0, 28]
+        },
+        {
+          "id": "copper_ore_count",
+          "description": "Copper ore count",
+          "type": "int",
+          "range": [0, 28]
+        },
+        {
+          "id": "iron_ore_count",
+          "description": "Iron ore count",
+          "type": "int",
+          "range": [0, 28]
+        },
+        {
+          "id": "coal_count",
+          "description": "Coal count",
+          "type": "int",
+          "range": [0, 28]
+        }
+      ]
+    },
+    {
+      "id": "environment_state",
+      "description": "Game world state",
+      "observations": [
+        {
+          "id": "nearest_rock_distance",
+          "description": "Distance to nearest mineable rock",
+          "type": "float",
+          "range": [0.0, 50.0]
+        },
+        {
+          "id": "nearest_rock_type",
+          "description": "Type of nearest rock",
+          "type": "categorical",
+          "categories": ["none", "tin", "copper", "iron", "coal", "mithril", "adamant", "runite"]
+        },
+        {
+          "id": "nearest_rock_available",
+          "description": "Is nearest rock available to mine",
+          "type": "bool"
+        },
+        {
+          "id": "rocks_in_area_count",
+          "description": "Number of rocks within 10 tiles",
+          "type": "int",
+          "range": [0, 20]
+        },
+        {
+          "id": "available_rocks_count",
+          "description": "Number of available rocks within 10 tiles",
+          "type": "int",
+          "range": [0, 20]
+        },
+        {
+          "id": "bank_distance",
+          "description": "Distance to nearest bank",
+          "type": "float",
+          "range": [0.0, 100.0]
+        },
+        {
+          "id": "at_bank",
+          "description": "Is player at bank (within interaction range)",
+          "type": "bool"
+        },
+        {
+          "id": "current_area",
+          "description": "Current mining area",
+          "type": "categorical",
+          "categories": ["lumbridge_mine", "varrock_east_mine", "varrock_west_mine", "al_kharid_mine", "dwarven_mine", "mining_guild", "other"]
+        },
+        {
+          "id": "area_efficiency",
+          "description": "Mining efficiency rating of current area (based on rock density, respawn time)",
+          "type": "float",
+          "range": [0.0, 1.0]
+        }
+      ]
+    },
+    {
+      "id": "session_state",
+      "description": "Training session information",
+      "observations": [
+        {
+          "id": "game_tick",
+          "description": "Current game tick",
+          "type": "int",
+          "range": [0, 2147483647]
+        },
+        {
+          "id": "session_duration",
+          "description": "Session duration in minutes",
+          "type": "float",
+          "range": [0.0, 1440.0]
+        },
+        {
+          "id": "xp_per_hour",
+          "description": "Current XP per hour rate",
+          "type": "float",
+          "range": [0.0, 100000.0]
+        },
+        {
+          "id": "actions_since_xp",
+          "description": "Number of actions since last XP gain",
+          "type": "int",
+          "range": [0, 1000]
+        },
+        {
+          "id": "successful_mines_count",
+          "description": "Number of successful mining attempts this session",
+          "type": "int",
+          "range": [0, 10000]
+        },
+        {
+          "id": "failed_mines_count",
+          "description": "Number of failed mining attempts this session",
+          "type": "int",
+          "range": [0, 10000]
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "xp_gained": {
+      "description": "Reward for gaining mining XP",
+      "base_reward": 1.0,
+      "scaling": "linear"
+    },
+    "level_up": {
+      "description": "Bonus reward for leveling up",
+      "base_reward": 100.0,
+      "scaling": "constant"
+    },
+    "efficiency_bonus": {
+      "description": "Bonus for maintaining high XP/hour",
+      "base_reward": 0.1,
+      "scaling": "efficiency_ratio"
+    },
+    "inventory_management": {
+      "description": "Reward for proper inventory management",
+      "base_reward": 0.5,
+      "scaling": "constant"
+    },
+    "idle_penalty": {
+      "description": "Penalty for being idle",
+      "base_reward": -0.1,
+      "scaling": "time_based"
+    },
+    "failed_action_penalty": {
+      "description": "Penalty for failed actions",
+      "base_reward": -0.05,
+      "scaling": "constant"
+    },
+    "death_penalty": {
+      "description": "Large penalty for dying",
+      "base_reward": -50.0,
+      "scaling": "constant"
+    }
+  },
+  "episode_config": {
+    "max_steps": 10000,
+    "max_duration_minutes": 60,
+    "success_conditions": [
+      "level_up",
+      "xp_threshold_reached"
+    ],
+    "failure_conditions": [
+      "death",
+      "stuck_too_long",
+      "negative_reward_threshold"
+    ],
+    "reset_conditions": [
+      "inventory_full_no_bank",
+      "no_rocks_available_long_time"
+    ]
+  }
+}
