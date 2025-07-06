@@ -97,7 +97,7 @@ class MiningEnvironment(gym.Env):
             # Inventory state
             28, 28, 1, 7, 28, 28, 28, 28, 28, 28,  # pickaxe_type: 0=none, 1=bronze, ..., 7=dragon
             # Environment state
-            50.0, 7, 1, 20, 20, 100.0, 1, 6, 1.0,  # current_area: 0=lumbridge_mine, ..., 6=other
+            50.0, 7, 1, 20, 20, 100.0, 1, 8, 1.0,  # current_area: 0=lumbridge_mine, ..., 6=other
             # Session state
             2147483647, 1440.0, 100000.0, 1000, 10000, 10000
         ], dtype=np.float32)
@@ -161,8 +161,9 @@ class MiningEnvironment(gym.Env):
                             "mithril": 4, "adamant": 5, "rune": 6, "dragon": 7}
         rock_type_map = {"none": 0, "tin": 1, "copper": 2, "iron": 3,
                          "coal": 4, "mithril": 5, "adamant": 6, "runite": 7}
-        area_map = {"lumbridge_mine": 0, "varrock_east_mine": 1, "varrock_west_mine": 2,
-                    "al_kharid_mine": 3, "dwarven_mine": 4, "mining_guild": 5, "other": 6}
+        area_map = {"lumbridge_castle": 0, "lumbridge_mine": 1, "lumbridge_bank": 2,
+                    "varrock_east_mine": 3, "varrock_west_mine": 4, "al_kharid_mine": 5,
+                    "dwarven_mine": 6, "mining_guild": 7, "other": 8}
 
         observation = np.array([
             # Player state (9)
