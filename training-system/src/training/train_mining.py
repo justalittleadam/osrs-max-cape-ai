@@ -1,16 +1,33 @@
 import sys
 import os
 
+# Add the src directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from stable_baselines3 import PPO
-from environments import MiningEnvironment
+from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.callbacks import CheckpointCallback
+from environments.mining_env import MiningEnvironment
+import torch
+print(f"CUDA available: {torch.cuda.is_available()}")
+print(f"Device count: {torch.cuda.device_count()}")
+if torch.cuda.is_available():
+    print(f"Current device: {torch.cuda.current_device()}")
+    print(f"Device name: {torch.cuda.get_device_name()}")
 
-
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
 def main():
+    # Create log directory
+    log_dir = "../logs/"
+    os.makedirs(log_dir, exist_ok=True)
+
     # Create environment
     print("Creating enhanced mining environment...")
     env = MiningEnvironment()
+
+    # Wrap environment with Monitor for logging
+    env = Monitor(env, log_dir)
 
     print("\n=== Testing Enhanced Navigation ===")
 
@@ -43,7 +60,7 @@ def main():
 
     # Test mining once we're at the mine
     print("\n2. Testing mining...")
-    obs, reward, done, truncated, info = env.step(8)  # mine_nearest
+    obs, reward, done, truncated, info = env.step(7)  # mine_nearest
     print(f"Action: mine_nearest")
     print(f"Reward: {reward:.3f}")
     print(f"Message: {info.get('server_response', {}).get('message', 'No message')}")
@@ -58,26 +75,46 @@ def main():
 
     print("\n=== Enhanced Navigation Tests Complete! ===\n")
 
-    # Create PPO model with enhanced settings for navigation
+    # Create checkpoint callback
+    checkpoint_callback = CheckpointCallback(
+        save_freq=2000,  # Save every 2000 steps
+        save_path=log_dir + "checkpoints/",
+        name_prefix="mining_model"
+    )
+
+    # Create PPO model with enhanced settings for navigation and TensorBoard logging
     print("Creating enhanced PPO model...")
     model = PPO(
         "MlpPolicy",
         env,
         verbose=1,
         learning_rate=3e-4,
-        n_steps=2048,  # More steps for complex navigation
-        batch_size=64,
-        n_epochs=10,
+        n_steps=64,  # More steps for complex navigation
+        batch_size=16,
+        n_epochs=4,
         gamma=0.99,  # Important for multi-step rewards
         gae_lambda=0.95,
         clip_range=0.2,
         ent_coef=0.01,  # Encourage exploration
+        tensorboard_log=log_dir,  # Enable TensorBoard logging,
+        device=device
     )
 
     # Train for longer since navigation is more complex
     print("Starting enhanced training...")
     print("Agent must learn: Castle → Mine → Mining → Bank → Repeat")
-    model.learn(total_timesteps=10000)  # Increased from 1000
+    print("TensorBoard logs will be saved to:", log_dir)
+    print("Start TensorBoard with: tensorboard --logdir", log_dir)
+
+    model.learn(
+        total_timesteps=10000,  # Increased from 1000
+        callback=checkpoint_callback,
+        # progress_bar=True
+    )
+
+    # Save the final model
+    model.save(log_dir + "final_mining_model")
+    print(f"Final model saved to: {log_dir}final_mining_model")
 
     print("Training complete! Testing trained model...")
 
@@ -90,7 +127,7 @@ def main():
     print(f"Starting position: ({obs[0]:.0f}, {obs[1]:.0f})")
 
     for i in range(50):  # More steps to see full cycle
-        action, _ = model.predict(obs)
+        action, _ = model.predict(obs, deterministic=True)
         obs, reward, done, truncated, info = env.step(action)
         total_reward += reward
         step_count += 1
@@ -98,16 +135,18 @@ def main():
         # Get action name for display
         action_names = {
             0: "no_move", 1: "navigate_to_mine", 2: "navigate_to_bank",
-            3: "move_to_tin", 4: "move_to_copper", 5: "move_to_iron", 6: "move_to_coal",
-            7: "no_mine", 8: "mine_nearest", 9: "mine_tin", 10: "mine_copper", 11: "mine_iron", 12: "mine_coal",
-            13: "no_inventory", 14: "drop_ore", 15: "bank_all", 16: "bank_ore_only",
-            17: "wait_tick", 18: "wait_mining", 19: "wait_movement"
+            3: "move_to_iron", 4: "move_to_coal", 5: "move_to_bank",
+            6: "no_mine", 7: "mine_nearest", 8: "mine_iron", 9: "mine_tin",
+            10: "mine_copper", 11: "mine_coal", 12: "no_inventory",
+            13: "drop_ore", 14: "bank_all", 15: "bank_ore_only",
+            16: "wait_tick", 17: "wait_mining", 18: "wait_movement",
+            19: "move_to_mithril", 20: "move_to_adamant", 21: "move_to_runite"
         }
         action_name = action_names.get(action, f"action_{action}")
 
         # Print interesting events
         message = info.get('server_response', {}).get('message', '')
-        if any(keyword in message for keyword in ['Arrived', 'mined', 'Banked', 'Walking']):
+        if any(keyword in message for keyword in ['Arrived', 'mined', 'Banked', 'Walking', 'Successfully']):
             print(f"Step {step_count}: {action_name} → {message} (Reward: {reward:.2f})")
 
         # Render every 10 steps
@@ -126,6 +165,7 @@ def main():
 
     env.close()
     print("✅ Enhanced training and testing complete!")
+    print(f"View training progress: tensorboard --logdir {log_dir}")
 
 
 if __name__ == "__main__":

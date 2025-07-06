@@ -13,7 +13,7 @@ environment:
   server_port: 8080
   max_steps: 10000
   max_duration_minutes: 60
-  num_parallel_envs: 4
+  num_parallel_envs: 1
 
 training:
   algorithm: "PPO"
